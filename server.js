@@ -27,10 +27,10 @@ app.use((req,res,next)=>{
 
 
 
-app.get('/api/tamu/:tamu_id/:date_in',async(req,res)=>{
+app.get('/api/tamu/:tamu_id',async(req,res)=>{
     try{
         const gTamu = await TamuModel.findById(req.params.tamu_id)
-        const filePath = path.join(gTamu.tamu_identity , req.params.date_in , gTamu.tamu_filename)
+        const filePath = path.join(BASE_DIR_UPLOADS , gTamu.tamu_identity , gTamu.tamu_date , gTamu.tamu_filename)
         const faceIdGTamu = fs.existsSync(path.join(BASE_DIR_UPLOADS , gTamu.tamu_identity , req.params.date_in , gTamu.tamu_filename))
         if(!faceIdGTamu){
             throw new Error('FILE_NOT_FOUND')
@@ -43,7 +43,7 @@ app.get('/api/tamu/:tamu_id/:date_in',async(req,res)=>{
             }
         })
     }catch(ex){
-        console.error(`${req.url}::${req.method}`,ex)
+        console.error(`${req.url}::${req.method}`,ex.message)
         res.status(500).json({
             code:500,
             data:'CANNOT_PROCEED_THIS_REQUEST'
@@ -51,13 +51,45 @@ app.get('/api/tamu/:tamu_id/:date_in',async(req,res)=>{
     }
 })
 
-app.delete('/api/tamu/:tamu_id',(req,res)=>{
+app.delete('/api/tamu/:tamu_id',async (req,res)=>{
+    try {
+        const gTamu = await TamuModel.findById(req.params.tamu_id)
+        const fileToDelete = path.join(BASE_DIR_UPLOADS , gTamu.tamu_identity , gTamu.tamu_date, gTamu.tamu_filename)
+        fs.unlinkSync(fileToDelete)
 
+        const fileTamuDateDir = path.join(BASE_DIR_UPLOADS, gTamu.tamu_identity , gTamu.tamu_date)
+        const lsFiletamuDateDir = fs.readdirSync(fileTamuDateDir)
+        if (lsFiletamuDateDir.length <= 0) {
+            fs.rmdirSync(fileTamuDateDir)
+        }
+
+        const fileTamuIdentityDir = path.join(BASE_DIR_UPLOADS,gTamu.tamu_identity)
+        const lsFileTamuIdentityDir = fs.readdirSync(fileTamuIdentityDir)
+        if (lsFileTamuIdentityDir.length <= 0) {
+            fs.rmdirSync(fileTamuIdentityDir)
+        }
+
+
+        await gTamu.destroy()
+
+        res.json({
+            code:200,
+            data:'PROCESS_SUCCESS'
+        })
+    }catch(ex){
+        console.error(`${req.url}::${req.method}`,ex.message)
+        res.status(500).json({
+            code:500,
+            data:'CANNOT_PROCEED_THIS_REQUEST'
+        })
+    }
 })
 
-app.post('/api/tamu/:tamu_id/out',(req,res)=>{
+app.get('/api/tamu/:tamu_id/out',(req,res)=>{
+    const mNow = momentTimezone().tz('Asia/Jakarta')
+    const timeOut = mNow.format('HH:mm')
     TamuModel.update({
-        tamu_time_out:new Date()
+        tamu_time_out:timeOut
     },{
         where:{
             tamu_id:req.params.tamu_id
@@ -70,7 +102,24 @@ app.post('/api/tamu/:tamu_id/out',(req,res)=>{
             })
         })
         .catch(err=>{
-            console.error(`${req.url}::${req.method}`,err)
+            console.error(`${req.url}::${req.method}`,err.message)
+            res.status(500).json({
+                code:500,
+                data:'CANNOT_PROCEED_THIS_REQUEST'
+            })
+        })
+})
+
+app.get('/api/tamu',(req,res)=>{
+    TamuModel.findAll()
+        .then(r=>{
+            res.json({
+                code:200,
+                data:r
+            })
+        })
+        .catch(err=>{
+            console.error(`${req.url}::${req.method}`,err.message)
             res.status(500).json({
                 code:500,
                 data:'CANNOT_PROCEED_THIS_REQUEST'
@@ -89,7 +138,7 @@ app.post('/api/tamu',upload,async(req,res)=>{
     const tamu_phoneno = req.body.tamu_phoneno
     const tamu_purpose = req.body.tamu_purpose
     const tamu_date = mNow.format('YYYY-MM-DD')
-    const tamu_time_in = mNow.format('hh:mm')
+    const tamu_time_in = mNow.format('HH:mm')
     const tamu_time_out  = null
 
     const tamuIdDir = `${BASE_DIR_UPLOADS}/${tamuIdentity}`
@@ -132,7 +181,7 @@ app.post('/api/tamu',upload,async(req,res)=>{
             data:'PROCESS_SUCCESS'
         })
     } catch (ex) {
-        console.error(`${req.url}::${req.method}`,ex)
+        console.error(`${req.url}::${req.method}`,ex.message)
         res.json({
             code:500,
             data:'CANNOT_PROCEED_THIS_REQUEST'
