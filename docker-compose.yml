@@ -1,0 +1,25 @@
+version: '3'
+services: 
+  webapp-node:
+    depends_on: 
+      - webapp-db
+    build: .
+    container_name: webapp-node
+    image: webapp-node
+    volumes: 
+      - webappNodeUpload:/app/uploads
+      - .:/app/node/
+    ports: 
+      - "9090:9090"
+    command: ["./wait-for-it.sh","webapp-db:3306","-t","150","--","npm","start"]
+  webapp-db:
+    image: mysql:5.7
+    container_name: webapp-db-node
+    environment: 
+      - MYSQL_ROOT_PASSWORD=pertamina
+      - MYSQL_USER=it-mor
+      - MYSQL_PASSWORD=pertamina
+      - MYSQL_DATABASE=bukutamu_db
+
+volumes: 
+  webappNodeUpload: 
