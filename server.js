@@ -6,7 +6,8 @@ const path = require('path')
 const sequelize = require('./models/db')
 const multer = require('multer')
 const upload = multer().single('file_upload')
-const moment = require('moment')
+const momentTimezone = require("moment-timezone")
+
 const PORT = 9090
 const BASE_DIR_UPLOADS = '/app/uploads'
 const mime = require('mime')
@@ -81,15 +82,15 @@ app.post('/api/tamu',upload,async(req,res)=>{
     const tamuUId = uniqid()
     const tamuFaceIdFileBuffer = req.file.buffer
     const tamuIdentity = req.body.tamu_identity
-    const tamuDateTime = new Date()
+    const mNow = momentTimezone().tz('Asia/Jakarta')
     
     const tamu_name = req.body.tamu_name
     const tamu_gender = req.body.tamu_gender
     const tamu_phoneno = req.body.tamu_phoneno
     const tamu_purpose = req.body.tamu_purpose
-    const tamu_date = tamuDateTime
-    const tamu_time_in = tamuDateTime
-    const tamu_time_out  = req.body.tamu_time_out
+    const tamu_date = mNow.format('YYYY-MM-DD')
+    const tamu_time_in = mNow.format('hh:mm')
+    const tamu_time_out  = null
 
     const tamuIdDir = `${BASE_DIR_UPLOADS}/${tamuIdentity}`
 
@@ -99,7 +100,8 @@ app.post('/api/tamu',upload,async(req,res)=>{
         fs.mkdirSync(tamuIdDir)
     }
 
-    const mDate = moment(tamuDateTime).format('YYYY-MM-DD')
+
+    const mDate = mNow.format('YYYY-MM-DD')
 
 
     const tamuDateDir = path.join(tamuIdDir , mDate)
