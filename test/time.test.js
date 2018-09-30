@@ -1,24 +1,30 @@
-const assert = require('assert')
-const moment = require('moment')
-const Sequelize = require('sequelize')
-const sequelize = new Sequelize('api1','arief','arief',{
-    operatorsAliases:false,
-    dialect:'mysql',
-    timezone:'Asia/Jakarta'
-})
+const momentTz = require('moment-timezone')
+const jakartaTz = momentTz().tz('Asia/Jakarta')
 
-
-describe('query to get curtime',_=>{
-    it('must return time',async()=>{
-        const result = await sequelize.query('select curtime()')
-        console.log(result)
+describe('timezone test (HH:MM)',_=>{
+    it('must return current time',done=>{
+        console.log(jakartaTz.format('HH:MM'))
+        done()
     })
 })
 
+describe('timezone test (HH:mm)',_=>{
+    it('must return current time',done=>{
+        console.log(jakartaTz.format('HH:mm'))
+        done()
+    })
+})
 
-describe('test moment',_=>{
-    it('must return id',done=>{
-        console.log(moment().format('LT'))
+describe('timezone format LT',_=>{
+    it('must not error',done=>{
+        console.log(jakartaTz.format('LT'))
+        done()
+    })
+})
+
+describe('timezone utc test',_=>{
+    it('must not error',done=>{
+        console.log(jakartaTz.utc().format('hh:mm'))
         done()
     })
 })
